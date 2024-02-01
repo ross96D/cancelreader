@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/muesli/cancelreader"
+	"github.com/ross96D/cancelreader"
 )
 
 func main() {
