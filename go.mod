@@ -1,4 +1,4 @@
-module github.com/muesli/cancelreader
+module github.com/ross96D/cancelreader
 
 go 1.17
 
