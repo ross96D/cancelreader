@@ -17,14 +17,18 @@ import (
 var fileShareValidFlags uint32 = 0x00000007
 
 // NewReader returns a reader and a cancel function. If the input reader is a
-// File with the same file descriptor as os.Stdin, the cancel function can
-// be used to interrupt a blocking read call. In this case, the cancel function
-// returns true if the call was canceled successfully. If the input reader is
-// not a File with the same file descriptor as os.Stdin, the cancel
-// function does nothing and always returns false. The Windows implementation
-// is based on WaitForMultipleObject with overlapping reads from CONIN$.
+// File with the same file descriptor as os.Stdin, and os.Stdin has not been
+// redirected, the cancel function can be used to interrupt a blocking read
+// call. In this case, the cancel function returns true if the call was canceled
+// successfully. If the input reader is not a File with the same file descriptor
+// as os.Stdin, or os.Stdin has been redirected to a pipe, the cancel function
+// does nothing and always returns false. The Windows implementation is based on
+// WaitForMultipleObject with overlapping reads from CONIN$.
 func NewReader(reader io.Reader) (CancelReader, error) {
-	if f, ok := reader.(File); !ok || f.Fd() != os.Stdin.Fd() {
+	var m uint32
+	if f, ok := reader.(File); !ok ||
+		f.Fd() != os.Stdin.Fd() ||
+		syscall.GetConsoleMode(syscall.Handle(f.Fd()), &m) != nil {
 		return newFallbackCancelReader(reader)
 	}
 
@@ -199,8 +203,8 @@ func prepareConsole(input windows.Handle) (reset func() error, err error) {
 	newMode &^= windows.ENABLE_LINE_INPUT
 	newMode &^= windows.ENABLE_MOUSE_INPUT
 	newMode &^= windows.ENABLE_WINDOW_INPUT
-	newMode &^= windows.ENABLE_PROCESSED_INPUT
 
+	newMode |= windows.ENABLE_PROCESSED_INPUT
 	newMode |= windows.ENABLE_EXTENDED_FLAGS
 	newMode |= windows.ENABLE_INSERT_MODE
 	newMode |= windows.ENABLE_QUICK_EDIT_MODE
