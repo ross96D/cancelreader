@@ -215,7 +215,8 @@ func prepareConsole(input windows.Handle) (reset func() error, err error) {
 	// being able to cancel input. The planned solution for this is to read
 	// Windows events in a more native fashion, rather than the current simple
 	// bytes-based input reader which works well on unix systems.
-	newMode |= windows.ENABLE_VIRTUAL_TERMINAL_INPUT
+	//! disable to test
+	newMode &^= windows.ENABLE_VIRTUAL_TERMINAL_INPUT
 
 	err = windows.SetConsoleMode(input, newMode)
 	if err != nil {
